@@ -1,0 +1,20 @@
+{
+    "name": "sa-rightclickrename.ahk",
+    "version": "0.0.1",
+    "description": "Adds user-configurable file renaming options to the windows explorer right-click menu",
+    "main": "app.ahk",
+    "scripts": {
+        "newinstall": "yarn install --modules-folder ./lib"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Chunjee/SA-omdbcloner"
+    },
+    "dependencies": {
+        "logs.ahk": "chunjee/logs.ahk",
+        "unit-test.ahk": "chunjee/unit-test.ahk"
+     },
+    
+    "author": "uncredited",
+    "license": "MIT"
+}
