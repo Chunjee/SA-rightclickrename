@@ -17,18 +17,12 @@ SetBatchLines -1 ;Go as fast as CPU will allow
 ;Dependencies
 #Include %A_ScriptDir%\lib
 #Include util_misc.ahk
-#Include util_arrays.ahk
-#Include json.ahk
 
 ;For Debug Only
 #Include ahk-unittest.ahk
 
 ;Classes
-#Include %A_ScriptDir%\classes
-#Include Logging.ahk
-#Include %A_ScriptDir%\lib\sort-arrays.ahk\export.ahk
-#Include %A_ScriptDir%\lib\context-menu.ahk\export.ahk
-#Include %A_ScriptDir%\lib\string-similarity.ahk\export.ahk
+#Include %A_ScriptDir%\lib\logs.ahk\export.ahk
 
 ;Modules
 #Include %A_ScriptDir%
@@ -63,24 +57,12 @@ Options_array := []
 stringSimilarity := new stringsimilarity()
 
 
-;Run some unittests
-; assert := new unittest_class()
-; assert.test((Fn_SDCSimilarity("The eturn of the king", "The Return of the King") > 0.90 ),true)
-; assert.test((Fn_SDCSimilarity("The Mask", "the mask") = 1 ),true)
-; assert.test((Fn_SDCSimilarity("set", "ste") = 0 ),true)
-; assert.report()
-
-
 
 ;/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\
 ; MAIN
 ;\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/
 
-
-
 CMD      = %1%
-Argument = %2%
-
 
 ;for each optional ending in the settings file, create a new context menu and remember it for removal if needed
 if (!CMD) {
@@ -98,17 +80,19 @@ if (!CMD) {
 
     Loop, Files, %FullPath%
     {
-        NewFilename := Fn_QuickRegEx(A_LoopFileName,"(.+)-") "-" NewLabel "." A_LoopFileExt
-        log.add("Attempting to rename " A_LoopFileName " to: " NewFilename)
+        log.add("Attempting to rename " A_LoopFileName)
         if (OldLabel = "null") { ;no existing -label
-            FileMove, %A_LoopFileDir%/%A_LoopFileName%, %A_LoopFileDir%/%A_LoopFileName%-%NewLabel%, 1
+            BaseFileName := Fn_QuickRegEx(A_LoopFileName,"(.+)\.") "-" NewLabel "." A_LoopFileExt
+            FileMove, %A_LoopFileDir%/%A_LoopFileName%, %A_LoopFileDir%/%BaseFileName%, 1
         } else {
+            NewFilename := Fn_QuickRegEx(A_LoopFileName,"(.+)-") "-" NewLabel "." A_LoopFileExt
             FileMove, %A_LoopFileDir%/%A_LoopFileName%, %A_LoopFileDir%/%NewFilename%, 1
         }
         if (ErrorLevel = 1) {
             log.add("Renaming failed for some reason, file possibly in use")
         }
     }
+    ExitApp
 }
 Return
 
