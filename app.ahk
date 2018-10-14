@@ -19,7 +19,7 @@ SetBatchLines -1 ;Go as fast as CPU will allow
 #Include util_misc.ahk
 
 ;For Debug Only
-#Include ahk-unittest.ahk
+;#Include ahk-unittest.ahk
 
 ;Classes
 #Include %A_ScriptDir%\lib\logs.ahk\export.ahk
@@ -82,7 +82,7 @@ if (!CMD) {
     {
         log.add("Attempting to rename " A_LoopFileName)
         if (OldLabel = "null") { ;no existing -label
-            BaseFileName := Fn_QuickRegEx(A_LoopFileName,"(.+)\.") "-" NewLabel "." A_LoopFileExt
+            BaseFileName := Fn_QuickRegEx(A_LoopFileName,"(.+?)(\.[^.]*$|$)") "-" NewLabel "." A_LoopFileExt
             FileMove, %A_LoopFileDir%/%A_LoopFileName%, %A_LoopFileDir%/%BaseFileName%, 1
         } else {
             NewFilename := Fn_QuickRegEx(A_LoopFileName,"(.+)-") "-" NewLabel "." A_LoopFileExt
