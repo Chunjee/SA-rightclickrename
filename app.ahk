@@ -4,29 +4,29 @@
 ; Adds user-configurable file renaming options to the windows explorer right-click menu
 ; 
 The_ProjectName := "RightClickRename"
-The_VersionNumb = 0.0.1
+The_VersionNumb = 0.1.0
 
 ;~~~~~~~~~~~~~~~~~~~~~
 ;Compile Options
 ;~~~~~~~~~~~~~~~~~~~~~
 SetBatchLines -1 ;Go as fast as CPU will allow
-#NoTrayIcon ;No tray icon
-#SingleInstance off ;Do not allow running more then one instance at a time
-
+#SingleInstance off ;Allow running more than once instance and do not warn user
+#Persistent
 
 ;Dependencies
 #Include %A_ScriptDir%\lib
 #Include util_misc.ahk
 
 ;For Debug Only
-;#Include ahk-unittest.ahk
+; #Include %A_ScriptDir%\lib\unit-testing.ahk\export.ahk 
 
 ;Classes
 #Include %A_ScriptDir%\lib\logs.ahk\export.ahk
+#Include %A_ScriptDir%\lib\json.ahk\export.ahk
 
 ;Modules
-#Include %A_ScriptDir%
-#Include GUI.ahk
+; #Include %A_ScriptDir%
+; #Include GUI.ahk
 
 
 Sb_InstallFiles() ;Install included files and make any directories required
@@ -45,7 +45,6 @@ log.initalizeNewLogFile(false, The_ProjectName " v" The_VersionNumb " log begins
 log.add(The_ProjectName " launched from user " A_UserName " on the machine " A_ComputerName ". Version: v" The_VersionNumb)
 
 
-
 ; Read settings.JSON for global settings
 FileRead, The_MemoryFile, % A_ScriptDir "\settings.json"
 Settings := JSON.parse(The_MemoryFile)
@@ -62,40 +61,56 @@ stringSimilarity := new stringsimilarity()
 ; MAIN
 ;\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/
 
-CMD      = %1%
+CMD = %1%
 
-;for each optional ending in the settings file, create a new context menu and remember it for removal if needed
+; if launched as exe or command
 if (!CMD) {
-    GUI()
+
+    ; create GUI trayicon + Menu
+    sb_TrayMenu()
     log.add("GUI was created")
+    ; add each menu item defined in settings
     for key, value in Settings.optional_endings {
-        ; CM_AddMenuItem( The_ProjectName, "value", "RENAME ""%1""" value )
         Fn_ConextMenuAdd("change name: ", value)
+        log.add("added context menu: " value)
     }
 } else {
     ; recieved command with CLI args
-    FullPath := Fn_QuickRegEx(CMD,"(.+)####")
-    NewLabel := Fn_QuickRegEx(CMD,"####(.+)")
-    OldLabel := Fn_QuickRegEx(CMD,"(-.+)####")
+
+  
+    Newname := fn_RenameString(CMD)
+    if (ErrorLevel = 1) {
+        log.add("Renaming failed for some reason, file possibly in use")
+    }
+
+    exitapp
+}
+return
+
+
+
+fn_RenameString(para_input)
+{
+    FullPath := Fn_QuickRegEx(para_input,"(.+)####")
+    ; Filename := Fn_QuickRegEx(para_input,"([^\\\/:*?""<>|\r\n]+)####")
+    NewLabel := Fn_QuickRegEx(para_input,"####(.+)")
+    OldLabel := Fn_QuickRegEx(para_input,"(-.+)####")
 
     Loop, Files, %FullPath%
     {
         log.add("Attempting to rename " A_LoopFileName)
         if (OldLabel = "null") { ;no existing -label
-            BaseFileName := Fn_QuickRegEx(A_LoopFileName,"(.+?)(\.[^.]*$|$)") "-" NewLabel "." A_LoopFileExt
-            FileMove, %A_LoopFileDir%/%A_LoopFileName%, %A_LoopFileDir%/%BaseFileName%, 1
+            NewFilename := Fn_QuickRegEx(A_LoopFileName,"(.+?)(\.[^.]*$|$)") "-" NewLabel "." A_LoopFileExt
         } else {
             NewFilename := Fn_QuickRegEx(A_LoopFileName,"(.+)-") "-" NewLabel "." A_LoopFileExt
+        }
+
+        if (A_IsCompiled) { ; only rename file when the script is compiled
             FileMove, %A_LoopFileDir%/%A_LoopFileName%, %A_LoopFileDir%/%NewFilename%, 1
         }
-        if (ErrorLevel = 1) {
-            log.add("Renaming failed for some reason, file possibly in use")
-        }
     }
-    ExitApp
+    return NewFilename
 }
-Return
-
 
 
 
@@ -104,13 +119,48 @@ Return
 ;\--/--\--/--\--/--\--/--\--/
 
 ;Create Directory and install needed file(s)
-Sb_InstallFiles()
+sb_InstallFiles()
 {
     ; FileCreateDir, %A_ScriptDir%\data\
 }
 
+sb_TrayMenu()
+{
+	Global
+	Menu, tray, NoStandard
+    
+	Menu, tray, add, %The_ProjectName% %The_VersionNumb%, Menu_Documentation
+    if(A_IsCompiled) {
+        Menu, tray, Icon, %The_ProjectName% %The_VersionNumb%, %A_ScriptDir%\%A_ScriptName%, 1, 0
+    }
+	Menu, tray, add, Documentation, Menu_Documentation
+	Menu, tray, add, Quit, Quit
+    ; Gui, Menu, tray
+	return
+
+	Menu_Documentation:
+    Run https://github.com/Chunjee/SA-rightclickrename
+	return
+
+	Quit:
+    sb_ExitApp()
+	exitapp
+}
 
 
+sb_ExitApp()
+{
+	global ;needs global acess to access log object
+
+	log.add("GUI closed")
+
+	log.add("Removing all registry changes")
+	for key, value in Settings.optional_endings {
+    	Fn_ContextMenuRemove("change name: ", value)
+	}
+
+	log.finalizeLog(The_ProjectName . " log completed.")
+}
 
 
 ;/--\--/--\--/--\--/--\--/--\
