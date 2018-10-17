@@ -12,9 +12,8 @@
     },
     "dependencies": {
         "logs.ahk": "chunjee/logs.ahk",
-        "unit-test.ahk": "chunjee/unit-test.ahk"
+        "json.ahk": "chunjee/json.ahk"
      },
-    
-    "author": "uncredited",
+    "author": "Shawn Brooker",
     "license": "MIT"
 }
